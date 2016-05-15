@@ -10,7 +10,7 @@ this solution was submitted for #Electricity4All challenge https://unite.un.org/
 due to the late start, only small sample were tested (using **debug** variable in the code)
 * **5k** lines input > **1m40.483s**
 * **10k** lines input > **7m3.465s**
-* **20k** lines input
+* **20k** lines input > **39m6.751s**
 
 ### Usage
 there are 2 input files names you need to specify within the code (**input data file** and **input scenario file**)
