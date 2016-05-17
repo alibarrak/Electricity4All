@@ -33,7 +33,7 @@ to run, simply type command in terminal:
 ```
 
 ### Output data
-at the end of the proccess, result data will be saved in CSV file. All sample tests have ~~100% match~~  (some mismatches after the update) with provided outputs xlsm file (see challege link for further information)
+at the end of the proccess, result data will be saved in CSV file. All sample tests have ~~100% match with provided outputs xlsm file~~ (see challege link for further information) (some mismatches after the update)
 
 ### notes
 ~~according to the challenge requirements, proccess time of the code seems to be slow! possible bug or wrong code interpretation; as never used either language before this time.~~
