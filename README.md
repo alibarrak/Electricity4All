@@ -15,7 +15,7 @@ due to the late start, only small sample were tested (using **debug** variable i
 updated timing:
 * **5k** lines input > **0m52.781s**
 * **10k** lines input > **3m47.208s**
-* **20k** lines input > 
+* **20k** lines input > *15m41.131s**
 
 ### Usage
 there are 2 input files names you need to specify within the code (**input data file** and **input scenario file**)
