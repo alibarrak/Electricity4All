@@ -1,7 +1,7 @@
 '''*********************************************************************
 This code is written for #Electricity4All Python Challenge
 https://unite.un.org/ideas/content/electricity4all-python-challenge
-on May 13 2016 By Ali Aldowais (last edited May 15 2016)
+on May 13 2016 By Ali Aldowais (last edited May 17 2016)
 licensed under a GNU General Public License Version 3
 
 The code is based on VBA code
@@ -14,7 +14,7 @@ data_file = '40k_in.csv'                      # input data file name (assuming f
 scenario_file = 'scenario1.csv'               # scenario file name (assuming first row is distance as INT and second row as #of people INT)
 result_file = scenario_file+'_result.csv'     # result file name
 
-debug = 0   # debug: to break on read data line number provided. 0 to ignore
+debug = 0                                     # debug: to break on read data line number provided. 0 to ignore
 
 # read scenario file (csv file contains row of distance and row of number of prople)
 with open(scenario_file, 'rt') as file:
@@ -22,7 +22,11 @@ with open(scenario_file, 'rt') as file:
   Limits = []
   for row in reader:
     Limits.append(row)  # store scenario (distance & number of people)
-  
+
+for i in range(0, len(Limits)):  # convert to int (faster calculation)
+  for j in range(0, len(Limits[0])):  
+    Limits[i][j] = int(Limits[i][j])
+    
 # read data file
 with open(data_file, 'rt') as file:
   reader = csv.reader(file, delimiter=',')
@@ -33,10 +37,9 @@ with open(data_file, 'rt') as file:
   header.append(next(reader))  # Read first line and count columns (could use constant 4 as input columns are: X, Y, POP, ele)
   header[1].extend(Limits[1])
   
-  InputW = len(header[0])  # store input file total column (should be constant of 4 ?)
-  
-  GISdata = []
-  result = [] # store resulted output on each scenario loop then use to write result file
+  GISdata = []         # store inputs as float
+  GISdataStr = []      # store inputs as string
+  result = []          # store resulted output on each scenario loop then use to write result file
   ElecStatus = []
   CellPath = []
   CellPath.append([])  # init 2d array
@@ -44,30 +47,37 @@ with open(data_file, 'rt') as file:
   
   
   for line,row in enumerate(reader):
-    if debug > 0 and line==debug:  # if debug is set, break reading on provided line number
+    if debug > 0 and line==debug:    # if debug is set, break reading on provided line number
       break
-      
-    GISdata.append(row)         # store input data as multipdimension array
-    ElecStatus.append(row[3])   # store column 4 from input data (electrification status)
-    CellPath[0].append(0)       # initilise array with 0 (store the km of line built prior to electrifying this cell)
-    CellPath[1].append(0)       # initilise array with 0 (stores the added km of line built specifically on the iteration that electrified the cell)
+    GISdata.append([float(row[0]), float(row[1]), float(row[2]), int(row[3])])         # store input data as multipdimension array (converting to float and int here makes calculation faster)
+    GISdataStr.append(row)           # store input data as string (to avoid extra .0 floating point in output if GISdata[] used)
   
-  InputL = len(GISdata)         # input data length
-      
+  InputL = len(GISdata)              # input data length
+    
+  for i in range(1, InputL):         # index starts here from 1 not 0
+    ElecStatus.append(GISdata[i][3]) # store column 4 from input data (electrification status)
+    CellPath[0].append(0)            # initilise array with 0 (store the km of line built prior to electrifying this cell)
+    CellPath[1].append(0)            # initilise array with 0 (stores the added km of line built specifically on the iteration that electrified the cell)
+
   ''' Iterate on each set of constraints formed by a given distance and a given number of people '''
   for l in range(0, len(Limits[0])):
     cntIteration = 0
 
+    lim0 = Limits[0][l]  # short name for variable that's used multiple times
+    lim1 = Limits[1][l]  # short name
+    
+    result.append([])    # empty array, to store each limit result in
+    
     # initilise arrays
     Unelectrified = []
     ElecInput = []
     ElecChanges = []
     
-    for i in range(1, InputL):
-      if int(ElecStatus[i-1]) == 0:
+    for i in range(1, InputL):  # index sstarts at 1
+      if ElecStatus[i-1] == 0:
         Unelectrified.append(i) # store index of ele=0
       else:
-        ElecInput.append(i) # store index of ele=1
+        ElecInput.append(i)     # store index of ele=1
     
     cnt2 = True
     while cnt2:
@@ -76,70 +86,81 @@ with open(data_file, 'rt') as file:
       cnt2 = False
       
       for i in range(0, len(ElecInput)): # number of electrified fields
-        print("itteration of electrified cell no ",i,", Elec line ",ElecInput[i])
+        #print("itteration of electrified cell no ",i,", Elec line ",ElecInput[i])
         
+        ''' optomization: to exit the loop early '''
+        ei = ElecInput[i]
+        ExistingGrid = (CellPath[0][ei - 1]) + (CellPath[1][ei - 1])
+        OkToExtend = ExistingGrid < 50000
+        if OkToExtend != True: # next iteration
+          continue
+          
         for j in range(0, len(Unelectrified)): # number of Unelectrified fields
-          ExistingGrid = int(CellPath[0][ElecInput[i]]) + int(CellPath[1][ElecInput[i]])
-
-          OkToExtend = ExistingGrid < 50000
-          if OkToExtend != True: # next iteration if false
-            continue
-
-          el = int(ElecStatus[Unelectrified[j]]) == 0
-          if el != True: # next iteration if false
+          
+          uj = Unelectrified[j]
+          el = ElecStatus[uj - 1] < 1
+          if el != True: # next iteration
             continue
           
-          dx = abs(float(GISdata[ElecInput[i]][0]) - float(GISdata[Unelectrified[j]][0])) < int(Limits[0][l])
-          if dx != True: # next iteration if false
+          gE0 = GISdata[ei][0]
+          gU0 = GISdata[uj][0]
+          dx = abs(gE0 - gU0) < lim0
+          if dx != True: # next iteration
             continue
-          
-          dy = abs(float(GISdata[ElecInput[i]][1]) - float(GISdata[Unelectrified[j]][1])) < int(Limits[0][l])
-          if dy != True: # next iteration if false
+            
+          gE1 = GISdata[ei][1]
+          gU1 = GISdata[uj][1]
+          dy = abs(gE1 - gU1) < lim0
+          if dy != True: # next iteration
             continue
-          
-          NotTheSame = (abs(float(GISdata[ElecInput[i]][0]) - float(GISdata[Unelectrified[j]][0])) > 0) or (abs(float(GISdata[ElecInput[i]][1]) - float(GISdata[Unelectrified[j]][1])) > 0)
-          if NotTheSame != True: # next iteration if false
+            
+          NotTheSame = (abs(gE0 - gU0) > 0) or (abs(gE1 - gU1) > 0)
+          if NotTheSame != True:
             continue
-
-          pop = float(GISdata[Unelectrified[j]][2]) > int(Limits[1][l]) + int(Limits[0][l]) * (15.702 * (ExistingGrid + 7006) / 1000 - 110) / 4400 # note that the "+7006" ensures that we are not removing people on iteration 1
-          if pop != True:
+            
+          pop = GISdata[uj][2] > lim1 + lim0 * (15.702 * (ExistingGrid + 7006) / 1000 - 110) / 4400 # note that the "+7006" ensures that we are not removing people on iteration 1
+          if pop != True: # next iteration
             continue
         
-          ''' Electrification decision: if the cell is not already changed and the conditions apply, then electrify '''
-          if el and dx and dy and pop and NotTheSame and OkToExtend == True:
-            FindValue = False
-            for k in range(0, len(ElecChanges)):  # Checks if this change has already been registered, if so, leaves if
-              if ElecChanges[k] == Unelectrified[j]:
-                FindValue = True
+          #''' Electrification decision: if the cell is not already changed and the conditions apply, then electrify '''
+          #if el and dx and dy and pop and NotTheSame and OkToExtend == True:
+          # no need for previous line as loop will exit on previous conditions mismatch
+          
+          FindValue = False
+          for k in range(0, len(ElecChanges)):  # Checks if this change has already been registered, if so, leaves if
+            if ElecChanges[k] == uj:
+              FindValue = True
+              break
 
-            if FindValue == False:
-              print("Row added to ElecStatus: ",Unelectrified[j]," Based on ref cell line ",ElecInput[i])
-              # Collects rows j for which electricity status changes and writes it into ElecChanges plus changes value in Electrified
-              cnt2 = True
-              ElecChanges.append(Unelectrified[j])
-              ElecStatus[Unelectrified[j]] = 1
-              
-              CellPath[0][Unelectrified[j]] = ExistingGrid
-              CellPath[1][Unelectrified[j]] = int(Limits[0][l])
+          if FindValue == False:
+            print("Row added to ElecStatus: ",uj," Based on ref cell line ",ei)
+            cnt2 = True
+            # Collects rows j for which electricity status changes and writes it into ElecChanges plus changes value in Electrified
+            ElecChanges.append(uj)
+            ElecStatus[uj - 1] = 1
+            CellPath[0][uj - 1] = ExistingGrid
+            CellPath[1][uj - 1] = lim0
         #end Unelectrified loop
       #end ElecInput loop
       
       # new electrified cell as a potential starting point for new iteration
       if cnt2:
-        ElecInput = []
-        ElecInput = ElecChanges
-        ElecChanges = []
- 
+        ElecInput = []  # clear
+        ElecInput.extend(ElecChanges)  # append
+        ElecChanges = []  # clear
+         
     #end while
-    result.append(ElecStatus) # store current loop ElecStatus
+    result[l].extend(ElecStatus) # store current loop ElecStatus
   #end for
   
 # write result
-#with open(result_file, 'w', newline='') as out_file: #newline fix for
 with open(result_file, 'w') as out_file:
   out = csv.writer(out_file, delimiter=',')
-  for i in range(0, len(GISdata)):
+  for i in range(0, len(GISdataStr)-1):
     for l in range(0, len(Limits[1])):
-      GISdata[i].append(result[l][i])
+      GISdataStr[i+1].append(result[l][i])
 
-  out.writerows(header+GISdata)
+  for l in range(0, len(Limits[1])):
+      GISdataStr[0].append(GISdataStr[0][3])
+
+  out.writerows(header+GISdataStr)
