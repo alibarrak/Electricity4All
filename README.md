@@ -8,9 +8,14 @@ this solution was submitted for #Electricity4All challenge https://unite.un.org/
 
 ### sample timing
 due to the late start, only small sample were tested (using **debug** variable in the code)
-* **5k** lines input > **1m40.483s**
-* **10k** lines input > **7m3.465s**
-* **20k** lines input > **39m6.751s**
+* ~~**5k** lines input > **1m40.483s**~~
+* ~~**10k** lines input > **7m3.465s**~~
+* ~~**20k** lines input > **39m6.751s**~~
+
+updated timing:
+* **5k** lines input > **0m52.781s**
+* **10k** lines input > **3m47.208s**
+* **20k** lines input > 
 
 ### Usage
 there are 2 input files names you need to specify within the code (**input data file** and **input scenario file**)
@@ -28,7 +33,8 @@ to run, simply type command in terminal:
 ```
 
 ### Output data
-at the end of the proccess, result data will be saved in CSV file. All sample tests have **100% match** with provided outputs xlsm file (see challege link for further information)
+at the end of the proccess, result data will be saved in CSV file. All sample tests have ~~100% match~~  (some mismatches after the update) with provided outputs xlsm file (see challege link for further information)
 
 ### notes
-according to the challenge requirements, proccess time of the code seems to be slow! possible bug or wrong code interpretation; as never used either language before this time.
+~~according to the challenge requirements, proccess time of the code seems to be slow! possible bug or wrong code interpretation; as never used either language before this time.~~
+the updated code performs ways better, however, not fully tested.
